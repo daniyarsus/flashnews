@@ -1,4 +1,4 @@
-from AppService import app, db
+from __init__ import app, db
 
 if __name__ == '__main__':
     with app.app_context():
