@@ -69,7 +69,7 @@ def index():
     return render_template('index.html', title="Главная страница", posts=posts)
 
 
-@app.route('/register', methods=['GET','POST'])
+@app.route('/register', methods=['GET', 'POST'])
 @limiter.limit("3 per second")
 def register():
     """
