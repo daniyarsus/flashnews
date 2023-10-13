@@ -53,48 +53,50 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 
-@app.route('/test', methods=['POST'])
-def test():
-    """
-    Этот маршрут принимает и обрабатывает POST запрос 1.
-
-    ---
-    tags:
-      - Пример
-    parameters:
-      - in: body
-        name: user
-        description: Информация о пользователе
-        required: true
-        schema:
-          type: object
-          properties:
-            username:
-              type: string
-              example: john_doe
-            email:
-              type: string
-              example: john@example.com
-    responses:
-      200:
-        description: Запрос обработан успешно
-      400:
-        description: Неверный запрос
-    """
-    # Ваш код обработки запроса
-    return 'Request processed successfully', 200
-
-
 @app.route('/')
 @limiter.limit("3 per second")
 def index():
+    """
+    Главная страница
+    ---
+    responses:
+      200:
+        description: Успех
+      400:
+        description: Ошибка
+    """
     posts = Post.query.all()
     return render_template('index.html', title="Главная страница", posts=posts)
 
 
-@app.route('/register', methods=['GET', 'POST'])
+@app.route('/register', methods=['GET','POST'])
 @limiter.limit("3 per second")
 def register():
+    """
+    Регистрация
+    ---
+    parameters:
+      - name: username
+        in: formData
+        type: string
+        required: true
+        description: Имя пользователя
+      - name: email
+        in: formData
+        type: string
+        required: true
+        description: Электронная почта
+      - name: password
+        in: formData
+        type: string
+        required: true
+        description: Пароль
+    responses:
+      200:
+        description: Успех
+      400:
+        description: Ошибка
+    """
     if request.method == 'POST':
         username = request.form['username']
         email = request.form['email']
@@ -118,9 +120,30 @@ def register():
 
     return render_template('register.html', title="Регистрация")
 
+
 @app.route('/login', methods=['GET', 'POST'])
 @limiter.limit("3 per second")
 def login():
+    """
+    Вход
+    ---
+    parameters:
+      - name: email
+        in: formData
+        type: string
+        required: true
+        description: Электронная почта
+      - name: password
+        in: formData
+        type: string
+        required: true
+        description: Пароль
+    responses:
+      200:
+        description: Успешная авторизация
+      400:
+        description: Неверная почта или пароль
+    """
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
@@ -128,7 +151,8 @@ def login():
 
         if user and check_password_hash(user.password, password):
             login_user(user)
-            flash('Вы авторизованы')
+            #flash('Вы авторизованы')
+            return redirect(url_for('index'))
         else:
             flash('Неверная почта или пароль.')
 
@@ -139,6 +163,26 @@ def login():
 @limiter.limit("3 per second")
 @login_required
 def new_post():
+    """
+    Создать новый пост
+    ---
+    parameters:
+      - name: title
+        in: formData
+        type: string
+        required: true
+        description: Заголовок поста
+      - name: content
+        in: formData
+        type: string
+        required: true
+        description: Содержание поста
+    responses:
+      200:
+        description: Пост успешно создан
+      302:
+        description: Редирект на главную страницу
+    """
     if request.method == 'POST':
         title = request.form['title']
         content = request.form['content']
@@ -154,6 +198,31 @@ def new_post():
 @limiter.limit("3 per second")
 @login_required
 def edit_post(post_id):
+    """
+    Редактировать пост
+    ---
+    parameters:
+      - name: post_id
+        in: path
+        type: integer
+        required: true
+        description: Идентификатор поста
+      - name: title
+        in: formData
+        type: string
+        required: true
+        description: Новый заголовок поста
+      - name: content
+        in: formData
+        type: string
+        required: true
+        description: Новое содержание поста
+    responses:
+      200:
+        description: Пост успешно отредактирован
+      302:
+        description: Редирект на главную страницу
+    """
     post = Post.query.get(post_id)
 
     if not post:
@@ -177,6 +246,25 @@ def edit_post(post_id):
 @app.route('/post/<int:post_id>', methods=['GET', 'POST'])
 @limiter.limit("3 per second")
 def view_post(post_id):
+    """
+    Просмотр поста и добавление комментария
+    ---
+    parameters:
+      - name: post_id
+        in: path
+        type: integer
+        required: true
+        description: Идентификатор поста
+      - name: comment_text
+        in: formData
+        type: string
+        description: Текст комментария
+    responses:
+      200:
+        description: Успешное отображение поста
+      302:
+        description: Редирект на главную страницу
+    """
     post = Post.query.get(post_id)
     if not post:
         flash('Пост не найден.', 'error')
@@ -200,6 +288,28 @@ def view_post(post_id):
 @limiter.limit("3 per second")
 @login_required
 def edit_username():
+    """
+    Изменить имя пользователя
+    ---
+    parameters:
+      - name: new_username
+        in: formData
+        type: string
+        required: true
+        description: Новое имя пользователя
+      - name: password_confirmation
+        in: formData
+        type: string
+        required: true
+        description: Подтверждение пароля
+    responses:
+      200:
+        description: Имя пользователя успешно изменено
+      302:
+        description: Редирект на профиль пользователя
+      400:
+        description: Ошибка при изменении имени пользователя
+    """
     if request.method == 'POST':
         new_username = request.form['new_username']
         password_confirmation = request.form['password_confirmation']
@@ -221,6 +331,28 @@ def edit_username():
 @limiter.limit("3 per second")
 @login_required
 def edit_email():
+    """
+    Изменить адрес электронной почты
+    ---
+    parameters:
+      - name: new_email
+        in: formData
+        type: string
+        required: true
+        description: Новый адрес электронной почты
+      - name: password_confirmation
+        in: formData
+        type: string
+        required: true
+        description: Подтверждение пароля
+    responses:
+      200:
+        description: Адрес электронной почты успешно изменен
+      302:
+        description: Редирект на профиль пользователя
+      400:
+        description: Ошибка при изменении адреса электронной почты
+    """
     if request.method == 'POST':
         # Обработка изменения адреса электронной почты
         new_email = request.form['new_email']
@@ -243,6 +375,28 @@ def edit_email():
 @limiter.limit("3 per second")
 @login_required
 def edit_password():
+    """
+    Изменить пароль
+    ---
+    parameters:
+      - name: old_password
+        in: formData
+        type: string
+        required: true
+        description: Старый пароль
+      - name: new_password
+        in: formData
+        type: string
+        required: true
+        description: Новый пароль
+    responses:
+      200:
+        description: Пароль успешно изменен
+      302:
+        description: Редирект на профиль пользователя
+      400:
+        description: Ошибка при изменении пароля
+    """
     if request.method == 'POST':
         # Обработка изменения пароля
         old_password = request.form['old_password']
@@ -265,6 +419,21 @@ def edit_password():
 @limiter.limit("3 per second")
 @login_required
 def delete_post(post_id):
+    """
+    Удалить пост
+    ---
+    parameters:
+      - name: post_id
+        in: path
+        type: integer
+        required: true
+        description: Идентификатор поста для удаления
+    responses:
+      302:
+        description: Пост успешно удален
+      400:
+        description: Ошибка при удалении поста
+    """
     post = Post.query.get(post_id)
 
     if not post:
@@ -285,6 +454,21 @@ def delete_post(post_id):
 @limiter.limit("3 per second")
 @login_required
 def delete_comment(comment_id):
+    """
+    Удалить комментарий
+    ---
+    parameters:
+      - name: comment_id
+        in: path
+        type: integer
+        required: true
+        description: Идентификатор комментария для удаления
+    responses:
+      302:
+        description: Комментарий успешно удален
+      400:
+        description: Ошибка при удалении комментария
+    """
     comment = Comment.query.get(comment_id)
 
     if not comment:
@@ -297,13 +481,33 @@ def delete_comment(comment_id):
         db.session.commit()
         flash('Комментарий успешно удален.', 'success')
 
-    return redirect(url_for('view_post', post_id=post_id))  # Используем post_id здесь
+    return redirect(url_for('view_post', post_id=post_id))
 
 
-@app.route('/edit_comment/<int:comment_id>', methods=['POST'])
+@app.route('/edit_comment/<int:comment_id>', methods=['GET', 'POST'])
 @limiter.limit("3 per second")
 @login_required
 def edit_comment(comment_id):
+    """
+    Редактировать комментарий
+    ---
+    parameters:
+      - name: comment_id
+        in: path
+        type: integer
+        required: true
+        description: Идентификатор комментария для редактирования
+      - name: edited_comment_text
+        in: formData
+        type: string
+        required: true
+        description: Отредактированный текст комментария
+    responses:
+      302:
+        description: Комментарий успешно отредактирован
+      400:
+        description: Ошибка при редактировании комментария
+    """
     comment = Comment.query.get(comment_id)
 
     if not comment:
@@ -323,6 +527,15 @@ def edit_comment(comment_id):
 @limiter.limit("3 per second")
 @login_required
 def my_profile():
+    """
+    Просмотр профиля пользователя
+    ---
+    responses:
+      200:
+        description: Успешный просмотр профиля
+      302:
+        description: Редирект на профиль пользователя
+    """
     user_posts = Post.query.filter_by(user_id=current_user.id).all()
     return render_template('my_profile.html', title='Мой профиль', user=current_user, user_posts=user_posts)
 
@@ -331,5 +544,12 @@ def my_profile():
 @limiter.limit("3 per second")
 @login_required
 def logout():
+    """
+    Выход из системы
+    ---
+    responses:
+      302:
+        description: Выход из системы успешно выполнен
+    """
     logout_user()
     return redirect('/')
