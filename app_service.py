@@ -4,7 +4,7 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from datetime import datetime, timedelta
 from flasgger import Swagger
 from flask_limiter import Limiter
-from flask_bcrypt import Bcrypt
+from flask_bcrypt import Bcrypt, check_password_hash
 
 app = Flask(__name__)
 swagger = Swagger(app)
@@ -105,16 +105,18 @@ def register():
         if existing_user:
             flash('Пользователь с похожим именем пользователя или почтой уже существует. Пожалуйста, выберите другие учетные данные.', 'error')
         else:
-            new_user = User(username=username, email=email, password=password)
+            # Хешируйте пароль перед сохранением в базу данных
+            hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+            new_user = User(username=username, email=email, password=hashed_password)
             db.session.add(new_user)
             db.session.commit()
 
+            # Автоматически авторизовать пользователя после регистрации
             login_user(new_user)
 
             flash('Вы успешно зарегистрировались.', 'success')
 
     return render_template('register.html', title="Регистрация")
-
 
 @app.route('/login', methods=['GET', 'POST'])
 @limiter.limit("3 per second")
@@ -124,7 +126,7 @@ def login():
         password = request.form['password']
         user = User.query.filter_by(email=email).first()
 
-        if user and user.password == password:
+        if user and check_password_hash(user.password, password):
             login_user(user)
             flash('Вы авторизованы')
         else:
@@ -203,7 +205,7 @@ def edit_username():
         password_confirmation = request.form['password_confirmation']
 
         # Проверка, совпадает ли пароль с текущим пользовательским паролем
-        if current_user.password == password_confirmation:
+        if check_password_hash(current_user.password, password_confirmation):
             # Обновите имя пользователя
             current_user.username = new_username
             db.session.commit()
@@ -222,11 +224,17 @@ def edit_email():
     if request.method == 'POST':
         # Обработка изменения адреса электронной почты
         new_email = request.form['new_email']
-        # Обновите адрес электронной почты в базе данных
-        current_user.email = new_email
-        db.session.commit()
-        flash('Адрес электронной почты успешно изменен.', 'success')
-        return redirect(url_for('my_profile'))
+        password_confirmation = request.form['password_confirmation']
+
+        # Проверка, совпадает ли пароль с текущим пользовательским паролем
+        if check_password_hash(current_user.password, password_confirmation):
+            # Обновите адрес электронной почты в базе данных
+            current_user.email = new_email
+            db.session.commit()
+            flash('Адрес электронной почты успешно изменен.', 'success')
+            return redirect(url_for('my_profile'))
+        else:
+            flash('Пароль неверен. Изменение адреса электронной почты не выполнено.', 'error')
 
     return render_template('edit_email.html', title='Изменить адрес электронной почты')
 
@@ -240,9 +248,10 @@ def edit_password():
         old_password = request.form['old_password']
         new_password = request.form['new_password']
 
-        if current_user.password == old_password:
-            # Обновите пароль в базе данных
-            current_user.password = new_password
+        if check_password_hash(current_user.password, old_password):
+            # Хешируйте новый пароль и обновите его в базе данных
+            hashed_password = bcrypt.generate_password_hash(new_password).decode('utf-8')
+            current_user.password = hashed_password
             db.session.commit()
             flash('Пароль успешно изменен.', 'success')
             return redirect(url_for('my_profile'))
