@@ -3,9 +3,13 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from datetime import datetime, timedelta
 from flasgger import Swagger
+from flask_limiter import Limiter
+from flask_bcrypt import Bcrypt
 
 app = Flask(__name__)
 swagger = Swagger(app)
+limiter = Limiter(app)
+bcrypt = Bcrypt(app)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 app.config['SECRET_KEY'] = 'bebra228'
@@ -32,6 +36,7 @@ class Comment(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
     user = db.relationship('User', backref='comments')
+
 
 class Post(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -81,12 +86,14 @@ def test():
 
 
 @app.route('/')
+@limiter.limit("3 per second")
 def index():
     posts = Post.query.all()
     return render_template('index.html', title="Главная страница", posts=posts)
 
 
 @app.route('/register', methods=['GET', 'POST'])
+@limiter.limit("3 per second")
 def register():
     if request.method == 'POST':
         username = request.form['username']
@@ -102,7 +109,6 @@ def register():
             db.session.add(new_user)
             db.session.commit()
 
-            # Автоматически авторизовать пользователя после регистрации
             login_user(new_user)
 
             flash('Вы успешно зарегистрировались.', 'success')
@@ -111,6 +117,7 @@ def register():
 
 
 @app.route('/login', methods=['GET', 'POST'])
+@limiter.limit("3 per second")
 def login():
     if request.method == 'POST':
         email = request.form['email']
@@ -127,6 +134,7 @@ def login():
 
 
 @app.route('/new_post', methods=['GET', 'POST'])
+@limiter.limit("3 per second")
 @login_required
 def new_post():
     if request.method == 'POST':
@@ -141,6 +149,7 @@ def new_post():
 
 
 @app.route('/edit_post/<int:post_id>', methods=['GET', 'POST'])
+@limiter.limit("3 per second")
 @login_required
 def edit_post(post_id):
     post = Post.query.get(post_id)
@@ -164,6 +173,7 @@ def edit_post(post_id):
 
 
 @app.route('/post/<int:post_id>', methods=['GET', 'POST'])
+@limiter.limit("3 per second")
 def view_post(post_id):
     post = Post.query.get(post_id)
     if not post:
@@ -185,6 +195,7 @@ def view_post(post_id):
 
 
 @app.route('/edit_username', methods=['GET', 'POST'])
+@limiter.limit("3 per second")
 @login_required
 def edit_username():
     if request.method == 'POST':
@@ -205,6 +216,7 @@ def edit_username():
 
 
 @app.route('/edit_email', methods=['GET', 'POST'])
+@limiter.limit("3 per second")
 @login_required
 def edit_email():
     if request.method == 'POST':
@@ -220,6 +232,7 @@ def edit_email():
 
 
 @app.route('/edit_password', methods=['GET', 'POST'])
+@limiter.limit("3 per second")
 @login_required
 def edit_password():
     if request.method == 'POST':
@@ -240,6 +253,7 @@ def edit_password():
 
 
 @app.route('/delete_post/<int:post_id>', methods=['POST'])
+@limiter.limit("3 per second")
 @login_required
 def delete_post(post_id):
     post = Post.query.get(post_id)
@@ -259,6 +273,7 @@ def delete_post(post_id):
 
 
 @app.route('/delete_comment/<int:comment_id>', methods=['POST'])
+@limiter.limit("3 per second")
 @login_required
 def delete_comment(comment_id):
     comment = Comment.query.get(comment_id)
@@ -277,6 +292,7 @@ def delete_comment(comment_id):
 
 
 @app.route('/edit_comment/<int:comment_id>', methods=['POST'])
+@limiter.limit("3 per second")
 @login_required
 def edit_comment(comment_id):
     comment = Comment.query.get(comment_id)
@@ -295,6 +311,7 @@ def edit_comment(comment_id):
 
 
 @app.route('/my_profile', methods=['GET'])
+@limiter.limit("3 per second")
 @login_required
 def my_profile():
     user_posts = Post.query.filter_by(user_id=current_user.id).all()
@@ -302,13 +319,8 @@ def my_profile():
 
 
 @app.route('/logout')
+@limiter.limit("3 per second")
 @login_required
 def logout():
     logout_user()
     return redirect('/')
-
-
-if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
-    app.run(debug=True)
