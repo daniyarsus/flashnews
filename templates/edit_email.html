@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    {{ super() }}
+
+    <head>
+        <title>{{ title }}</title>
+    </head>
+
+    <h2>Изменить адрес электронной почты</h2>
+
+    <form method="POST">
+        <label for="new_email">Новый адрес электронной почты:</label>
+        <input type="email" id="new_email" name="new_email" required>
+        
+        <label for="password_confirmation">Подтвердите пароль:</label>
+        <input type="password" id="password_confirmation" name="password_confirmation" required>
+
+        <button type="submit">Сохранить</button>
+    </form>
+
+{% endblock %}

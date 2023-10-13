@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    {{ super() }}
+
+    <head>
+        <title>{{ title }}</title>
+    </head>
+
+    <h1>Создать новый пост</h1>
+
+    <div>
+        <form method="POST" action="/new_post">
+            <div>
+                <label for="title">Заголовок поста:</label>
+                <input type="text" id="title" name="title" required>
+
+                <label for="content">Содержание поста:</label>
+                <textarea id="content" name="content" rows="4" required></textarea>
+            </div>
+            <button type="submit">Создать пост</button>
+        </form>
+    </div>
+{% endblock %}

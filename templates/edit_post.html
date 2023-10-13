@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    {{ super() }}
+
+    <head>
+        <title>{{ title }}</title>
+    </head>
+
+    <h1>Редактирование поста</h1>
+
+    <div>
+        <form method="POST" action="{{ url_for('edit_post', post_id=post.id) }}">
+            <div>
+                <label for="title">Заголовок поста:</label>
+                <input type="text" id="title" name="title" required value="{{ post.title }}">
+
+                <label for="content">Содержание поста:</label>
+                <textarea id="content" name="content" rows="4" required>{{ post.content }}</textarea>
+            </div>
+            <button type="submit">Сохранить</button>
+        </form>
+
+        <!-- Кнопка "Удалить пост" с подтверждением -->
+        <form method="POST" action="{{ url_for('delete_post', post_id=post.id) }}" onsubmit="return confirm('Вы уверены, что хотите удалить этот пост?');">
+            <button type="submit">Удалить пост</button>
+        </form>
+    </div>
+
+{% endblock %}

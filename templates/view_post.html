@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    {{ super() }}
+
+    <head>
+        <title>{{ title }}</title>
+    </head>
+
+    <h1>{{ post.title }}</h1>
+    <p>{{ post.content }}</p>
+    <p>Дата создания: {{ post.created_at }}</p>
+
+    <a href="{{ url_for('index') }}" class="btn btn-primary">Назад</a>
+
+    <h2>Комментарии:</h2>
+
+    <ul>
+        {% for comment in comments %}
+            <div>
+                <p>{{ comment.text }}</p>
+                <p>Автор: {{ comment.user.username }}</p>
+                {% if current_user.is_authenticated and comment.user_id == current_user.id %}
+                    <form method="POST" action="{{ url_for('delete_comment', comment_id=comment.id) }}">
+                        <button type="submit" class="btn btn-danger">Удалить комментарий</button>
+                    </form>
+                    <button type="button" class="btn btn-primary" data-toggle="collapse" data-target="#editComment{{ comment.id }}">Редактировать комментарий</button>
+                    <div id="editComment{{ comment.id }}" class="collapse">
+                        <form method="POST" action="{{ url_for('edit_comment', comment_id=comment.id) }}">
+                            <div>
+                                <label for="edited_comment_text">Изменить комментарий:</label>
+                                <textarea id="edited_comment_text" name="edited_comment_text" rows="4" required>{{ comment.text }}</textarea>
+                            </div>
+                            <button type="submit">Сохранить изменения</button>
+                        </form>
+                    </div>
+                {% endif %}
+            </div>
+        {% endfor %}
+
+    </ul>
+
+    {% if current_user.is_authenticated %}
+        <form method="POST">
+            <div>
+                <label for="comment_text">Добавить комментарий:</label>
+                <textarea id="comment_text" name="comment_text" rows="4" required></textarea>
+            </div>
+            <button type="submit">Отправить комментарий</button>
+        </form>
+    {% else %}
+        <p>Для добавления комментария войдите в систему.</p>
+    {% endif %}
+
+{% endblock %}

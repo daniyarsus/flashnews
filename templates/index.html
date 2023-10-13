@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    {{ super() }}
+
+    <head>
+        <title>{{ title }}</title>
+    </head>
+
+    <h1>Главная страница</h1>
+
+    <h2>Новости</h2>
+
+    <div>
+        {% for post in posts %}
+            <div>
+                <h3>{{ post.title }}</h3>
+                <p>{{ post.content[:300] + "..." }}</p>
+                <p>Дата создания: {{ post.created_at }}</p>
+                <a href="{{ url_for('view_post', post_id=post.id) }}">Подробнее</a>
+            </div>
+        {% endfor %}
+    </div>
+
+{% endblock %}

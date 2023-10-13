@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    {{ super() }}
+
+    <head>
+        <title>{{ title }}</title>
+    </head>
+
+    <h2>Мой профиль:</h2>
+
+    {% if user %}
+        <div>
+            {% if user %}
+                <p>Username: {{ user.username }} (<a href="{{ url_for('edit_username') }}">изменить</a>)</p>
+                <p>Email: {{ user.email }} (<a href="{{ url_for('edit_email') }}">изменить</a>)</p>
+                <p>Password: ******** (<a href="{{ url_for('edit_password') }}">изменить</a>)</p>
+            {% else %}
+                <p>Пользователь не авторизован.</p>
+            {% endif %}
+        </div>
+    {% else %}
+        <p>Пользователь не авторизован.</p>
+    {% endif %}
+
+    <h2>Мои посты:</h2>
+
+    <div>
+        {% for post in user_posts %}
+            <div>
+                <strong>{{ post.title }}</strong>
+                <p>{{ post.content }}</p>
+                <p>Дата создания: {{ post.created_at }}</p>
+                <a href="{{ url_for('view_post', post_id=post.id) }}" class="btn btn-primary">Подробнее</a>
+                <a href="{{ url_for('edit_post', post_id=post.id) }}" class="btn btn-primary">Редактировать</a>
+            </div>
+        {% endfor %}
+    </div>
+
+{% endblock %}
