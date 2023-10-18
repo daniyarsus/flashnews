@@ -136,7 +136,7 @@ def login():
       - name: password
         in: formData
         type: string
-        required: true
+        required: true print(a[i],'>>',5)
         description: Пароль
     responses:
       200:
@@ -234,8 +234,8 @@ def edit_post(post_id):
         return redirect(url_for('index'))
 
     if request.method == 'POST':
-        post.title = request.form['title']  # Update title
-        post.content = request.form['content']  # Update content
+        post.title = request.form['title']
+        post.content = request.form['content']
         db.session.commit()
         flash('Пост успешно отредактирован.', 'success')
         return redirect(url_for('index'))
@@ -273,7 +273,7 @@ def view_post(post_id):
     if request.method == 'POST':
         if current_user.is_authenticated:
             comment_text = request.form['comment_text']
-            new_comment = Comment(text=comment_text, user_id=current_user.id, post_id=post.id)  # Set the post_id
+            new_comment = Comment(text=comment_text, user_id=current_user.id, post_id=post.id)
             db.session.add(new_comment)
             db.session.commit()
             flash('Комментарий добавлен.', 'success')
@@ -441,7 +441,6 @@ def delete_post(post_id):
     elif post.user_id != current_user.id:
         flash('Вы не можете удалять чужие посты.', 'error')
     else:
-        # Delete associated comments first
         Comment.query.filter_by(post_id=post.id).delete()
         db.session.delete(post)
         db.session.commit()
