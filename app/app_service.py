@@ -29,15 +29,6 @@ class User(UserMixin, db.Model):
     password = db.Column(db.String(100), nullable=False)
 
 
-class Comment(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    text = db.Column(db.String(255), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.now)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
-    user = db.relationship('User', backref='comments')
-
-
 class Post(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
@@ -46,6 +37,15 @@ class Post(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     author = db.relationship('User', backref='posts')
     comments = db.relationship('Comment', backref='post', lazy='dynamic')
+
+
+class Comment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    text = db.Column(db.String(255), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
+    user = db.relationship('User', backref='comments')
 
 
 @login_manager.user_loader
@@ -107,13 +107,11 @@ def register():
         if existing_user:
             flash('Пользователь с похожим именем пользователя или почтой уже существует. Пожалуйста, выберите другие учетные данные.', 'error')
         else:
-            # Хешируйте пароль перед сохранением в базу данных
             hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
             new_user = User(username=username, email=email, password=hashed_password)
             db.session.add(new_user)
             db.session.commit()
 
-            # Автоматически авторизовать пользователя после регистрации
             login_user(new_user)
 
             flash('Вы успешно зарегистрировались.', 'success')
@@ -151,8 +149,8 @@ def login():
 
         if user and check_password_hash(user.password, password):
             login_user(user)
-            #flash('Вы авторизованы')
-            return redirect(url_for('index'))
+            flash('Вы авторизованы')
+            #return redirect(url_for('index'))
         else:
             flash('Неверная почта или пароль.')
 
